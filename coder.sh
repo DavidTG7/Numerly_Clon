@@ -1,28 +1,34 @@
 #!/bin/bash
 
+# Carpeta del repositorio
+REPO_DIR="./"
 
-MES="01"
-HORA="10"
-MINUTOS="00"
-ANIO="2025"
+# Fecha de inicio: 4 meses atrás
+START_DATE=$(date -v-4m +"%Y-%m-%d")
 
-# Loop del día, del 01 al 30
-for DIA in {01..30}; do
-  # Formatea la fecha en el formato mmddHHMMyyyy
-  FECHA="${MES}${DIA}${HORA}${MINUTOS}${ANIO}"
+# Fecha de fin: hoy
+END_DATE=$(date +"%Y-%m-%d")
 
-  # Cambia la fecha del sistema (requiere permisos de administrador)
-  echo "Cambiando la fecha a: $FECHA"
-  sudo date "$FECHA"
-  touch "$FECHA".txt
-  echo "Hello!" > "$FECHA".txt
-  git add "$FECHA".txt
-  git commit -m "This is a commit"
-  rm "$FECHA".txt
+# Moverse al repositorio
+cd "$REPO_DIR" || exit
 
-  # Espera 1 segundo entre cada cambio (opcional)
-  sleep 1
+# Loop por cada día entre la fecha de inicio y hoy
+CURRENT_DATE="$START_DATE"
+while [ "$CURRENT_DATE" != "$(date -j -f "%Y-%m-%d" "$END_DATE" +"%Y-%m-%d" -v+1d)" ]; do
+  echo "Haciendo commit para: $CURRENT_DATE"
+
+  # Crear o modificar un archivo de prueba
+  echo "Commit del $CURRENT_DATE" > commit.txt
+
+  # Añadir el archivo
+  git add commit.txt
+
+  # Crear commit con fecha específica
+  GIT_COMMITTER_DATE="$CURRENT_DATE 12:00:00" GIT_AUTHOR_DATE="$CURRENT_DATE 12:00:00" git commit -m "Commit automático del $CURRENT_DATE"
+
+  # Avanzar al siguiente día
+  CURRENT_DATE=$(date -j -v+1d -f "%Y-%m-%d" "$CURRENT_DATE" +"%Y-%m-%d")
 done
 
-sudo ntpdate -u time.apple.com
-
+# Subir los cambios
+git push origin main
